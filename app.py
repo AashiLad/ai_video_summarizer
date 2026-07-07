@@ -1,6 +1,7 @@
-import streamlit as st
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv()  # MUST be before any core/ or utils/ imports (they read env vars at import time)
+
+import streamlit as st
 
 from utils.audio_processor import process_input
 from core.transcriber import transcribe_all
@@ -8,34 +9,32 @@ from core.summarize import summarize, generate_title
 from core.extractor import extract_action_items, extract_key_decisions, extract_questions
 from core.rag_engine import build_rag_chain, ask_questions
 
-
-
 # ─── Page Config ──────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="AI Meeting Assistant",
+    page_title="AI Video Summarize",
     page_icon="🎬",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ─── Minimal, clean styling ───────────────────────────────────────────────────
+# ─── Minimal purple-themed styling ────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 html, body, [class*="css"] {
     font-family: 'Inter', sans-serif;
 }
 
-/* Tighten default top padding */
 .block-container {
-    padding-top: 2rem;
+    padding-top: 3.5rem;
     max-width: 1100px;
 }
 
 /* Card-style containers */
 .info-card {
-    border: 1px solid rgba(128,128,128,0.25);
+    border: 1px solid rgba(168,85,247,0.25);
+    background: rgba(168,85,247,0.05);
     border-radius: 10px;
     padding: 1.25rem 1.5rem;
     margin-bottom: 1rem;
@@ -47,7 +46,7 @@ html, body, [class*="css"] {
     font-weight: 600;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    opacity: 0.65;
+    color: #c084fc;
 }
 
 /* Chat bubbles */
@@ -61,7 +60,7 @@ html, body, [class*="css"] {
 }
 
 .chat-user {
-    background: rgba(99,102,241,0.12);
+    background: rgba(168,85,247,0.18);
     margin-left: auto;
     text-align: right;
 }
@@ -71,18 +70,37 @@ html, body, [class*="css"] {
     margin-right: auto;
 }
 
-/* Subtle title */
+/* Gradient title */
 .app-title {
-    font-weight: 700;
-    font-size: 2rem;
+    font-weight: 800;
+    font-size: 2.6rem;
+    line-height: 1.3;
+    padding-top: 0.1em;
     margin-bottom: 0;
+    background: linear-gradient(90deg, #c084fc, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .app-subtitle {
-    opacity: 0.6;
+    opacity: 0.55;
     font-size: 0.95rem;
-    margin-top: 0.2rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-top: 0.3rem;
     margin-bottom: 1.5rem;
+}
+
+/* Primary button → purple gradient */
+button[kind="primary"] {
+    background: linear-gradient(90deg, #a855f7, #818cf8) !important;
+    border: none !important;
+}
+
+/* Active tab underline → purple */
+.stTabs [aria-selected="true"] {
+    color: #c084fc !important;
+    border-bottom-color: #c084fc !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -97,8 +115,8 @@ for key, default in {
 
 # ─── Sidebar: input controls ──────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### 🎬 AI Meeting Assistant")
-    st.caption("Transcribe, summarise, and chat with any recorded meeting.")
+    st.markdown("### 🎬 AI Video Summarizer")
+    st.caption("Transcribe, summarise, and chat with any recorded video.")
     st.divider()
 
     source = st.text_input(
@@ -116,9 +134,9 @@ with st.sidebar:
             st.rerun()
 
 # ─── Header ───────────────────────────────────────────────────────────────────
-st.markdown('<p class="app-title">AI Meeting Assistant</p>', unsafe_allow_html=True)
+st.markdown('<p class="app-title">AI Video Summarizer</p>', unsafe_allow_html=True)
 st.markdown(
-    '<p class="app-subtitle">Turn any recording into a searchable, summarised meeting record.</p>',
+    '<p class="app-subtitle">Transcribe · Summarise · Chat with your video</p>',
     unsafe_allow_html=True,
 )
 
@@ -224,4 +242,22 @@ if st.session_state.result:
             st.rerun()
 
 else:
-    st.info("Paste a YouTube URL or local file path in the sidebar, then hit **Analyse** to get started.")
+    st.markdown(
+        """
+        <div style="text-align:center; padding: 3rem 0;">
+            <div style="font-size:3rem;">🎬</div>
+            <h2 style="margin-top:0.5rem;">Ready to Analyse</h2>
+            <p style="opacity:0.6;">Paste a YouTube URL or local file path in the sidebar, choose your
+            language, and hit <b>Analyse</b> to get started.</p>
+            <div style="margin-top:1rem;">
+                <span style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.35);
+                border-radius:6px; padding:0.25rem 0.7rem; font-size:0.75rem; margin-right:0.4rem;">TRANSCRIPTION</span>
+                <span style="background:rgba(129,140,248,0.15); color:#a5b4fc; border:1px solid rgba(129,140,248,0.35);
+                border-radius:6px; padding:0.25rem 0.7rem; font-size:0.75rem; margin-right:0.4rem;">SUMMARISATION</span>
+                <span style="background:rgba(192,132,252,0.15); color:#e9d5ff; border:1px solid rgba(192,132,252,0.35);
+                border-radius:6px; padding:0.25rem 0.7rem; font-size:0.75rem;">RAG CHAT</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
